@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "ngr2QTX+AIk=",
+  "dgSpecHash": "TrjOBe6bNpQ=",
   "success": true,
-  "projectFilePath": "C:\\Users\\tueyc\\CMKL Year 2\\SEN-201 Software Engineering Process\\MyBackend\\MyBackend.csproj",
+  "projectFilePath": "C:\\Users\\tueyc\\CMKL Year 2\\SEN-201 Software Engineering Process\\MyBackend\\backend\\MyBackend.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\tueyc\\.nuget\\packages\\aspnetcore.healthchecks.ui\\9.0.0\\aspnetcore.healthchecks.ui.9.0.0.nupkg.sha512",
     "C:\\Users\\tueyc\\.nuget\\packages\\aspnetcore.healthchecks.ui.core\\9.0.0\\aspnetcore.healthchecks.ui.core.9.0.0.nupkg.sha512",

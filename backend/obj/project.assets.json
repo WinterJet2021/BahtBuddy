@@ -5601,11 +5601,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\tueyc\\CMKL Year 2\\SEN-201 Software Engineering Process\\MyBackend\\MyBackend.csproj",
+      "projectUniqueName": "C:\\Users\\tueyc\\CMKL Year 2\\SEN-201 Software Engineering Process\\MyBackend\\backend\\MyBackend.csproj",
       "projectName": "MyBackend",
-      "projectPath": "C:\\Users\\tueyc\\CMKL Year 2\\SEN-201 Software Engineering Process\\MyBackend\\MyBackend.csproj",
+      "projectPath": "C:\\Users\\tueyc\\CMKL Year 2\\SEN-201 Software Engineering Process\\MyBackend\\backend\\MyBackend.csproj",
       "packagesPath": "C:\\Users\\tueyc\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\tueyc\\CMKL Year 2\\SEN-201 Software Engineering Process\\MyBackend\\obj\\",
+      "outputPath": "C:\\Users\\tueyc\\CMKL Year 2\\SEN-201 Software Engineering Process\\MyBackend\\backend\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
