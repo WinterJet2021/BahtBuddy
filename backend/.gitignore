@@ -1,3 +1,41 @@
-bin
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
 
-obj
+# Virtual environment
+.venv/
+env/
+venv/
+
+# Environment & secrets
+.env
+*.env
+
+# SQLite database
+*.db
+*.sqlite3
+
+# Migrations cache
+migrations/versions/*.pyc
+migrations/*.log
+
+# IDE / Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Pytest / Coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Logs
+*.log
