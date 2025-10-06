@@ -3,3 +3,5 @@
 *.zip
 *.csv
 __pycache__/
+# Ignore SQLite source files
+sqlite-src-3500400/
