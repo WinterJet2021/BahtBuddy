@@ -1,0 +1,5 @@
+# Ignore database and zip files
+*.db
+*.zip
+*.csv
+__pycache__/
