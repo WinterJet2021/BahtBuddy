@@ -1,4 +1,5 @@
-from .extensions import db
+# app/models.py
+from app.extensions import db
 
 class Account(db.Model):
     __tablename__ = 'accounts'
@@ -11,7 +12,7 @@ class OpeningBalance(db.Model):
     __tablename__ = 'opening_balances'
     balance_id = db.Column(db.Integer, primary_key=True)
     account_id = db.Column(db.Integer, db.ForeignKey('accounts.account_id'))
-    amount = db.Column(db.Float, nullable=False)
+    amount = db.Column(db.Float, nullable=False)  # keep Float for now if DB already has float
     date = db.Column(db.String(50), nullable=False)
 
 class Transaction(db.Model):
