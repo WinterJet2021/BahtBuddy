@@ -1,5 +1,5 @@
 from .extensions import db
+from decimal import Decimal
 
-class _Bootstrap(db.Model):
-    __tablename__ = "bootstrap_check"
-    id = db.Column(db.Integer, primary_key=True)
+# Example money column (works on SQLite & other DBs)
+Money = db.Numeric(14, 2, asdecimal=True)
