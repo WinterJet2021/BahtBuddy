@@ -1,15 +1,37 @@
 from flask import Flask
+from sympy import python
 from .config import Config
 from .extensions import db, migrate
 from .routes.health import bp as health_bp
+import os
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
 
 def create_app():
-    app = Flask(__name__)
+    app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(Config)
 
+    # Ensure instance folder exists (holds bahtbuddy.db)
+    try:
+        os.makedirs(app.instance_path, exist_ok=True)
+    except OSError:
+        pass
+
+    # Init extensions
     db.init_app(app)
     migrate.init_app(app, db)
 
+    # SQLite: enforce foreign keys
+    @event.listens_for(Engine, "connect")
+    def set_sqlite_pragma(dbapi_connection, connection_record):
+        try:
+            cursor = dbapi_connection.cursor()
+            cursor.execute("PRAGMA foreign_keys=ON;")
+            cursor.close()
+        except Exception:
+            pass
+
+    # Blueprints
     app.register_blueprint(health_bp, url_prefix="/api")
 
     @app.get("/")

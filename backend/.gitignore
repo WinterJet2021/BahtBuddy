@@ -39,3 +39,8 @@ htmlcov/
 
 # Logs
 *.log
+
+# SQLite file lives here
+instance/
+*.db
+*.sqlite3
