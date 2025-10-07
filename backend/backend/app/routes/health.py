@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify
 from sqlalchemy import text, inspect
-from extensions.extensions import db
+from app.extensions import db
 
 bp = Blueprint("health", __name__)
 

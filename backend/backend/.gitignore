@@ -1,12 +1,3 @@
-<<<<<<< HEAD
-# Ignore database and zip files
-*.db
-*.zip
-*.csv
-__pycache__/
-# Ignore SQLite source files
-sqlite-src-3500400/
-=======
 # Python cache
 __pycache__/
 *.py[cod]
@@ -53,4 +44,3 @@ htmlcov/
 instance/
 *.db
 *.sqlite3
->>>>>>> 7ccd6e0 (Added more subfolders for cleaner workspace and also for modularity)
