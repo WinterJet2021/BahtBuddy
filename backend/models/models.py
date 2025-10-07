@@ -1,5 +1,5 @@
 # app/models.py
-from app.extensions import db
+from extensions.extensions import db
 
 class Account(db.Model):
     __tablename__ = 'accounts'
