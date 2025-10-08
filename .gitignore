@@ -1,28 +1,10 @@
-# Virtual environments
 .venv/
-venv/
-
-# Python cache
-__pycache__/
-*.py[cod]
-
-# Environment variables
 .env
-
-# Instance folder (Flask)
+__pycache__/
+*.pyc
 instance/
+*.sqlite
 *.db
-
-# IDE files
-.vscode/
-.idea/
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Migrations cache
-migrations/
-
-# Logs
-*.log
+backend/instance/
+backend/__pycache__/
+backend/**/*.pyc

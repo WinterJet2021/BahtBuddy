@@ -1,25 +1,35 @@
-# backend/app/__init__.py
-from flask import Flask
-from backend.config.config import Config
-from backend.extensions.extensions import db, migrate
 import os
+from flask import Flask
+from ..extensions import db
+from .routes import init_app as init_routes
 
 def create_app():
-    app = Flask(__name__, instance_relative_config=True)
-    app.config.from_object(Config)
+    # Compute: <repo>/BahtBuddy/backend/instance
+    backend_dir   = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))  # .../backend
+    instance_dir  = os.path.join(backend_dir, "instance")
 
+    # ⬇️ Pin the instance_path explicitly
+    app = Flask(__name__, instance_path=instance_dir, instance_relative_config=True)
+
+    # Ensure instance/ exists and put the SQLite file here
     os.makedirs(app.instance_path, exist_ok=True)
+    db_path = os.path.join(app.instance_path, "bahtbuddy.db")
 
-    # init extensions
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + db_path
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
     db.init_app(app)
-    migrate.init_app(app, db)
 
-    # import + register blueprints INSIDE the factory to avoid NameError/circulars
-    from backend.app.routes.accounts import bp as accounts_bp
-    app.register_blueprint(accounts_bp, url_prefix="/api")
+    # Make sure models are imported BEFORE create_all
+    from ..models import models as _models  # registers Account, Transaction, etc.
 
-    @app.get("/")
-    def index():
-        return {"message": "BahtBuddy backend is connected to SQLite ✅"}
+    with app.app_context():
+        db.create_all()
+
+    init_routes(app)
+
+    # (Optional) quick startup log so you can see where things are
+    print("[BahtBuddy] instance_path:", app.instance_path)
+    print("[BahtBuddy] db:", db_path)
 
     return app
