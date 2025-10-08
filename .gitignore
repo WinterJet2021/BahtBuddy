@@ -1,56 +1,28 @@
-<<<<<<< HEAD
-# Ignore database and zip files
-*.db
-*.zip
-*.csv
-__pycache__/
-# Ignore SQLite source files
-sqlite-src-3500400/
-=======
+# Virtual environments
+.venv/
+venv/
+
 # Python cache
 __pycache__/
 *.py[cod]
-*.pyo
-*.pyd
-*.so
 
-# Virtual environment
-.venv/
-env/
-venv/
-
-# Environment & secrets
+# Environment variables
 .env
-*.env
 
-# SQLite database
+# Instance folder (Flask)
+instance/
 *.db
-*.sqlite3
 
-# Migrations cache
-migrations/versions/*.pyc
-migrations/*.log
-
-# IDE / Editor files
+# IDE files
 .vscode/
 .idea/
-*.swp
-*.swo
 
 # OS files
 .DS_Store
 Thumbs.db
 
-# Pytest / Coverage
-.coverage
-htmlcov/
-.pytest_cache/
+# Migrations cache
+migrations/
 
 # Logs
 *.log
-
-# SQLite file lives here
-instance/
-*.db
-*.sqlite3
->>>>>>> 7ccd6e0 (Added more subfolders for cleaner workspace and also for modularity)
