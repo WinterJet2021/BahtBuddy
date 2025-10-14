@@ -7,11 +7,10 @@ Provides lightweight validation for dates, periods, amounts, and account types.
 Created by Chirayu Sukhum (Tuey) and Thanakrit Punyasuntontamrong (Pass), October 14, 2025
 """
 
-from typing import Any
-
+# To-do import typing from any
 
 # Valid account types for the double-entry bookkeeping system
-VALID_ACCOUNT_TYPES = ("asset", "liability", "equity", "income", "expense")
+# To-do in future: load from config or database
 
 
 # -----------------------------------------------------------------------------
@@ -34,16 +33,7 @@ def ymd(date: str) -> bool:
         ymd("2025-1-1") returns False (missing leading zeros)
         ymd("25-10-14") returns False (wrong format)
     """
-    if not isinstance(date, str):
-        return False
-    
-    if len(date) != 10:
-        return False
-    
-    if (date[4] != "-") or (date[7] != "-"):
-        return False
-    
-    return True
+    # To-do in future: consider using datetime for full validation
 
 
 def ym(period: str) -> bool:
@@ -62,16 +52,8 @@ def ym(period: str) -> bool:
         ym("2025-1") returns False (missing leading zero)
         ym("10-2025") returns False (wrong order)
     """
-    if not isinstance(period, str):
-        return False
-    
-    if len(period) != 7:
-        return False
-    
-    if period[4] != "-":
-        return False
-    
-    return True
+    # To-do in future: consider using datetime for full validation
+
 
 
 # -----------------------------------------------------------------------------
@@ -96,10 +78,8 @@ def amount_pos(value: Any) -> bool:
         amount_pos(-50) returns False
         amount_pos("abc") returns False
     """
-    try:
-        return float(value) > 0
-    except (ValueError, TypeError):
-        return False
+    # To-do in future: consider using decimal.Decimal for precision
+
 
 
 # -----------------------------------------------------------------------------
@@ -123,4 +103,4 @@ def account_type_valid(account_type: str) -> bool:
         - income: Salary, sales, interest received
         - expense: Rent, utilities, food, transport
     """
-    return account_type in VALID_ACCOUNT_TYPES
+    # To-do in future: load valid types from config or database
