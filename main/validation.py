@@ -8,9 +8,19 @@ Created by Chirayu Sukhum (Tuey) and Thanakrit Punyasuntontamrong (Pass), Octobe
 """
 
 # To-do import typing from any
+import re
+from typing import Any  # For type hints
+
 
 # Valid account types for the double-entry bookkeeping system
 # To-do in future: load from config or database
+valid_account_types = {
+    "asset": ["Cash", "Bank", "Accounts Receivable"],
+    "liability": ["Credit Card", "Loan", "Accounts Payable"],
+    "equity": ["Owner's Equity", "Retained Earnings"],
+    "income": ["Salary", "Sales", "Interest"],
+    "expense": ["Rent", "Utilities", "Food", "Transport"],
+}
 
 
 # -----------------------------------------------------------------------------
@@ -34,6 +44,8 @@ def ymd(date: str) -> bool:
         ymd("25-10-14") returns False (wrong format)
     """
     # To-do in future: consider using datetime for full validation
+    pattern = r"^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$"
+    return bool(re.match(pattern, date))
 
 
 def ym(period: str) -> bool:
@@ -53,6 +65,9 @@ def ym(period: str) -> bool:
         ym("10-2025") returns False (wrong order)
     """
     # To-do in future: consider using datetime for full validation
+    pattern = r"^\d{4}-(0[1-9]|1[0-2])$"
+    return bool(re.match(pattern, period))
+    
 
 
 
@@ -79,6 +94,11 @@ def amount_pos(value: Any) -> bool:
         amount_pos("abc") returns False
     """
     # To-do in future: consider using decimal.Decimal for precision
+    try:
+        num = float(value)
+        return num > 0
+    except (ValueError, TypeError):
+        return False
 
 
 
@@ -104,3 +124,8 @@ def account_type_valid(account_type: str) -> bool:
         - expense: Rent, utilities, food, transport
     """
     # To-do in future: load valid types from config or database
+    for types in valid_account_types.values():
+        if account_type in types:
+            return True
+        return False
+    
