@@ -1,66 +1,67 @@
-# -----------------------------
-# Python cache and environment
-# -----------------------------
+# ======================================
+# BahtBuddy Project - Git Ignore Config
+# ======================================
+
+# --- Python cache / compiled files ---
 __pycache__/
 *.py[cod]
+*$py.class
 *.pyo
 *.pyd
 *.pdb
 *.so
 *.dll
 *.dylib
-*.egg-info/
-.eggs/
-.env
-.venv/
-env/
-venv/
-ENV/
-build/
-develop-eggs/
-dist/
-pip-wheel-metadata/
 *.manifest
-*.spec
 
-# -----------------------------
-# PyInstaller build output
-# -----------------------------
+# --- Virtual environments ---
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+.venv.bak/
+
+# --- PyInstaller build outputs ---
 /build/
 /dist/
 /BahtBuddy.spec
 
-# -----------------------------
-# Logs and system files
-# -----------------------------
+# --- Logs / temporary files ---
 *.log
-*.pot
 *.tmp
 *.bak
 *.swp
-.DS_Store
-Thumbs.db
+*.swo
 
-# -----------------------------
-# VS Code and IDE settings
-# -----------------------------
-.vscode/
-.idea/
-*.code-workspace
-
-# -----------------------------
-# SQLite database files (if user data only)
-# -----------------------------
+# --- Databases (local user data only) ---
 *.db
 *.sqlite
 *.sqlite3
 
-# -----------------------------
-# Git and deployment metadata
-# -----------------------------
-*.orig
-*.rej
+# --- System files ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- IDE / Editor configs ---
+.vscode/
+.idea/
+*.code-workspace
+
+# --- Archives / installers / executables ---
 *.zip
 *.tar
 *.gz
+*.7z
 *.exe
+
+# --- Node / JS cache (if any frontend assets) ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --- OS / misc ---
+ehthumbs.db
+Icon?
