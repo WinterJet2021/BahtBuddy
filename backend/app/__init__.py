@@ -1,6 +1,6 @@
 import os
 from flask import Flask
-from ..extensions import db
+from extensions import db
 from .routes import init_app as init_routes
 
 def create_app():
@@ -21,7 +21,7 @@ def create_app():
     db.init_app(app)
 
     # Make sure models are imported BEFORE create_all
-    from ..models import models as _models  # registers Account, Transaction, etc.
+    from models import models as _models  # registers Account, Transaction, etc.
 
     with app.app_context():
         db.create_all()

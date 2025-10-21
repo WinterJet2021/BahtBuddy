@@ -1,7 +1,10 @@
+from app.validators import validate_transaction
 from flask import Blueprint, request, jsonify
 from sqlalchemy import and_
 from ...extensions import db
 from ...models import Transaction, Account
+from app.validators import validate_transaction
+
 
 bp = Blueprint("transactions", __name__)
 

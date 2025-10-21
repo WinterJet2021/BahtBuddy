@@ -4,6 +4,7 @@ def init_app(app):
     from .transactions import bp as tx_bp
     from .budgets import bp as budgets_bp
     from .reports import bp as reports_bp
+    app.config["DEBUG"] = True
 
     app.register_blueprint(health_bp,     url_prefix="/api")
     app.register_blueprint(accounts_bp,   url_prefix="/api/accounts")

@@ -1,7 +1,8 @@
-import json, os
-from flask import Blueprint, request, jsonify, current_app
-from ...extensions import db
-from ...models import Account, OpeningBalance, Transaction
+from flask import Blueprint, request, jsonify
+from app.extensions import db
+from app.models.models import Account, OpeningBalance, Transaction
+from app.validators import validate_account_type
+
 
 bp = Blueprint("accounts", __name__)
 
