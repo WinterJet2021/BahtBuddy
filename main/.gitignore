@@ -1,8 +1,66 @@
-# Python
+# -----------------------------
+# Python cache and environment
+# -----------------------------
 __pycache__/
-*.pyc
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+*.so
+*.dll
+*.dylib
+*.egg-info/
+.eggs/
+.env
+.venv/
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+pip-wheel-metadata/
+*.manifest
+*.spec
 
-# SQLite
+# -----------------------------
+# PyInstaller build output
+# -----------------------------
+/build/
+/dist/
+/BahtBuddy.spec
+
+# -----------------------------
+# Logs and system files
+# -----------------------------
+*.log
+*.pot
+*.tmp
+*.bak
+*.swp
+.DS_Store
+Thumbs.db
+
+# -----------------------------
+# VS Code and IDE settings
+# -----------------------------
+.vscode/
+.idea/
+*.code-workspace
+
+# -----------------------------
+# SQLite database files (if user data only)
+# -----------------------------
 *.db
-*.db-shm
-*.db-wal
+*.sqlite
+*.sqlite3
+
+# -----------------------------
+# Git and deployment metadata
+# -----------------------------
+*.orig
+*.rej
+*.zip
+*.tar
+*.gz
+*.exe
