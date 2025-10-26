@@ -410,13 +410,17 @@ class TransactionsFrame(ttk.Frame):
         self.amount_entry.grid(row=0, column=3, padx=5, pady=5, sticky="ew")
 
         # Notebook for Expense/Income/Transfer
-        notebook = ttk.Notebook(parent)
-        notebook.grid(row=1, column=0, columnspan=4, sticky="ew", pady=5)
-        
-        self.exp_tab, self.inc_tab, self.trn_tab = ttk.Frame(notebook), ttk.Frame(notebook), ttk.Frame(notebook)
-        notebook.add(self.exp_tab, text="Expense")
-        notebook.add(self.inc_tab, text="Income")
-        notebook.add(self.trn_tab, text="Transfer")
+        self.notebook = ttk.Notebook(parent)
+        self.notebook.grid(row=1, column=0, columnspan=4, sticky="ew", pady=5)
+
+        self.exp_tab, self.inc_tab, self.trn_tab = (
+            ttk.Frame(self.notebook),
+            ttk.Frame(self.notebook),
+            ttk.Frame(self.notebook),
+        )
+        self.notebook.add(self.exp_tab, text="Expense")
+        self.notebook.add(self.inc_tab, text="Income")
+        self.notebook.add(self.trn_tab, text="Transfer")
         
         self._create_tab(self.exp_tab, "Paid From:", ['asset', 'liability'], "Category:", ['expense'])
         self._create_tab(self.inc_tab, "Source:", ['income'], "Deposit To:", ['asset'])
@@ -502,13 +506,16 @@ class TransactionsFrame(ttk.Frame):
             messagebox.showwarning("Input Error", "Please enter a valid amount.")
             return
 
-        active_tab_text = self.nametowidget(self.winfo_children()[0].winfo_children()[0].select()).winfo_class()
-        
-        if "exp_tab" in active_tab_text: # Expense
+        current_tab = self.notebook.select()
+
+        if current_tab == str(self.exp_tab):
+            # Expense: credit = paid from, debit = expense category
             credit_name, debit_name = self.exp_tab.combo1.get(), self.exp_tab.combo2.get()
-        elif "inc_tab" in active_tab_text: # Income
+        elif current_tab == str(self.inc_tab):
+            # Income: credit = income source, debit = deposit to
             credit_name, debit_name = self.inc_tab.combo1.get(), self.inc_tab.combo2.get()
-        else: # Transfer
+        else:
+            # Transfer: credit = from, debit = to
             credit_name, debit_name = self.trn_tab.combo1.get(), self.trn_tab.combo2.get()
         
         if not all([date, amount, credit_name, debit_name]):

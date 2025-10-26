@@ -124,8 +124,6 @@ def account_type_valid(account_type: str) -> bool:
         - expense: Rent, utilities, food, transport
     """
     # To-do in future: load valid types from config or database
-    for types in valid_account_types.values():
-        if account_type in types:
-            return True
-        return False
+    return account_type in {"asset", "liability", "equity", "income", "expense"}
+
     
