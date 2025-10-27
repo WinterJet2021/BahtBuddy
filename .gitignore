@@ -1,10 +1,68 @@
-.venv/
-.env
+# ----------------------------------------------------------------------
+# BahtBuddy Project — Git Ignore Rules
+# ----------------------------------------------------------------------
+
+# --- Python Cache & Build ---
 __pycache__/
-*.pyc
-instance/
-*.sqlite
-*.db
-backend/instance/
-backend/__pycache__/
-backend/**/*.pyc
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+build/
+dist/
+.eggs/
+
+# --- Virtual Environments ---
+venv/
+env/
+.venv/
+ENV/
+env.bak/
+
+# --- SQLite Database ---
+main/bahtbuddy.db
+
+# --- Logs / Temp Files ---
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# --- Test Runs and Evidence ---
+test_runs/*/data/
+test_runs/*/evidence/
+!test_runs/.keep   # if you want to keep folder structure only
+test_runs/*/results.md
+test_runs/*/transactions_export.csv
+test_runs/*/accounts_after_import.json
+test_runs/*/budget_report.csv
+
+# --- VSCode / Editor Files ---
+.vscode/
+.idea/
+*.code-workspace
+
+# --- OS-specific files ---
+ehthumbs.db
+desktop.ini
+Icon?
+._*
+
+# --- Backups / Temporary Docs ---
+~$*
+*.tmp
+*.bak
+*.old
+
+# --- Ignore Deployment / Private Keys ---
+*.pem
+*.key
+*.crt
+*.pfx
+.env
+.env.*
