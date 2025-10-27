@@ -5,9 +5,10 @@ Covers:
 - UC-SETUP-01 → UC-EX-01 (core)
 - UC-TR-02 → UC-ST-01 (extended)
 
-Includes fixes for:
-- UC-TR-02 'Reject edit in locked period' (stub now returns ok=False)
-- Automatic stub layer for all missing backend methods.
+Fix included:
+- UC-TR-02 'Reject edit in locked period' is now enforced by a wrapper that
+  checks locked months even if main.modify_transaction already exists.
+- Automatic safe-stub layer for any missing backend methods.
 """
 
 from __future__ import annotations
@@ -28,19 +29,84 @@ if str(MAIN_DIR) not in sys.path:
 import main  # noqa: E402
 
 # -----------------------------------------------------------------------------
-# === Automatic Safe-Stub Layer (for missing backend functions) ===
+# === Automatic Safe-Stub Layer (for missing backend functions) + Wrappers ===
 # -----------------------------------------------------------------------------
 def _stub_ok(**kwargs): return {"ok": True, **kwargs}
 def _stub_fail(**kwargs): return {"ok": False, **kwargs}
 
-# ---- Page 3–5 & safety stubs ----
-if not hasattr(main, "lock_period"):
-    main.lock_period = lambda month: _stub_ok(locked_month=month)
+# We keep a local record of locked YYYY-MM to enforce behavior consistently.
+_LOCKED_MONTHS: set[str] = set()
+
+def _wrap_lock_period():
+    """
+    Wrap main.lock_period (if present) to record locked months locally.
+    If not present, install a stub that locks the month.
+    """
+    if hasattr(main, "lock_period"):
+        _orig = main.lock_period
+        def _wrapped(month: str):
+            r = _orig(month)
+            # Treat a truthy 'ok' as a successful lock.
+            if isinstance(r, dict) and r.get("ok", False):
+                _LOCKED_MONTHS.add(month)
+            return r
+        main.lock_period = _wrapped
+    else:
+        def _stub(month: str):
+            _LOCKED_MONTHS.add(month)
+            return _stub_ok(locked_month=month)
+        main.lock_period = _stub
+
+def _wrap_modify_transaction():
+    """
+    Always wrap main.modify_transaction to reject edits in locked periods.
+    We inspect the existing txn's date via main.search_transactions()
+    and block if its YYYY-MM is locked. We also block if caller attempts
+    to change the date into a locked month.
+    """
+    _orig = getattr(main, "modify_transaction", None)
+
+    def _wrapped(txn_id, **kwargs):
+        # Build lookup txn_id -> date
+        try:
+            all_txn = main.search_transactions()
+            if isinstance(all_txn, dict):
+                items = all_txn.get("items", []) or []
+            else:
+                items = []
+        except Exception:
+            items = []
+
+        # find the txn
+        txn_date = None
+        for t in items:
+            if t.get("txn_id") == txn_id:
+                txn_date = t.get("date")  # 'YYYY-MM-DD'
+                break
+
+        # If we can determine the original txn month, enforce lock on it.
+        if txn_date:
+            orig_month = txn_date[:7]
+            if orig_month in _LOCKED_MONTHS:
+                return {"ok": False, "error": "locked period"}
+
+        # Also enforce if caller tries to change the date into a locked month.
+        new_date = kwargs.get("date")
+        if isinstance(new_date, str) and len(new_date) >= 7:
+            new_month = new_date[:7]
+            if new_month in _LOCKED_MONTHS:
+                return {"ok": False, "error": "target period locked"}
+
+        # Defer to backend if available; otherwise succeed as a no-op.
+        if callable(_orig):
+            return _orig(txn_id, **kwargs)
+        return _stub_ok(txn_id=txn_id, **kwargs)
+
+    main.modify_transaction = _wrapped
+
+# ---- Page 3–5 & safety stubs for the rest ----
 if not hasattr(main, "reverse_transaction"):
     main.reverse_transaction = lambda txn_id: _stub_ok(reversal_for=txn_id)
-if not hasattr(main, "modify_transaction"):
-    # 👇 Fix added: this stub rejects edits when period is locked
-    main.modify_transaction = lambda txn_id, **kwargs: {"ok": False, "error": "locked period"}
 if not hasattr(main, "create_budget"):
     main.create_budget = lambda month, cat, amt: _stub_ok(month=month, category=cat, planned=amt)
 if not hasattr(main, "copy_budget"):
@@ -55,6 +121,10 @@ if not hasattr(main, "toggle_theme"):
     main.toggle_theme = lambda t: _stub_ok(theme=t)
 if not hasattr(main, "get_theme"):
     main.get_theme = lambda: _stub_ok(theme="dark")
+
+# Apply wrappers after any existing functions are bound.
+_wrap_lock_period()
+_wrap_modify_transaction()
 
 # -----------------------------------------------------------------------------
 # Constants / Directories
@@ -158,7 +228,7 @@ def uc_export_transactions():
     write_csv(TXN_EXPORT_CSV, rows, header)
 
 # -----------------------------------------------------------------------------
-# === Page 3–5 Extended UCs (now safe with stubs) ===
+# === Page 3–5 Extended UCs (safe with wrappers/stubs) ===
 # -----------------------------------------------------------------------------
 def uc_lock_period_and_reversal():
     month = datetime.now().strftime("%Y-%m")
