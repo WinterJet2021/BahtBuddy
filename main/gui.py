@@ -5,7 +5,7 @@ Graphical User Interface for the BahtBuddy Personal Finance Management System.
 Provides a user-friendly interface for managing accounts, transactions,
 and budgets using tkinter.
 
-Created by Thanakrit Punyasuntontamrong (Pass) and Chirayu Sukhum (Tuey), October 15, 2025
+Created by Khant Phyo Wai (KP), October 15, 2025
 """
 
 import tkinter as tk
