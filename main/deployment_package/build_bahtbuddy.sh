@@ -5,35 +5,27 @@
 #  Description: Builds BahtBuddy GUI as a native bundle on macOS
 #               and as a GUI executable on Linux.
 #  Usage:
-#     ./scripts/build_bahtbuddy.sh            # build only
-#     ./scripts/build_bahtbuddy.sh --run      # build and launch
-#     ./scripts/build_bahtbuddy.sh --clean    # clean build artifacts
+#     ./build_bahtbuddy.sh             # build only
+#     ./build_bahtbuddy.sh --run       # build and launch
+#     ./build_bahtbuddy.sh --clean     # clean build artifacts
 #  Notes:
 #   - Expects repo layout with `main/gui.py` and optional `assets/icon.icns`
-#   - Creates/uses a local .venv at repo root
+#   - Creates/uses a local .venv (on WSL it prefers ~/.venvs/bahtbuddy)
 # ======================================================
 
 set -euo pipefail
 
-# ---------- helpers ----------
-emoji_ok="✅"
-emoji_fail="❌"
-emoji_rocket="🚀"
-
-die() { echo "$emoji_fail $*" >&2; exit 1; }
-has() { command -v "$1" >/dev/null 2>&1; }
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+# ---- paths ----
+SCRIPT_DIR="$(cd -- "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"   # from main/deployment_package → repo root
 MAIN_DIR="$REPO_ROOT/main"
-VENV_DIR="$REPO_ROOT/.venv"
 DIST_DIR="$MAIN_DIR/dist"
 BUILD_DIR="$MAIN_DIR/build"
 
+# ---- flags ----
 RUN_AFTER=false
 CLEAN_ONLY=false
-
-for arg in "${@:-}"; do
+for arg in "$@"; do
   case "$arg" in
     --run) RUN_AFTER=true ;;
     --clean) CLEAN_ONLY=true ;;
@@ -41,110 +33,72 @@ for arg in "${@:-}"; do
   esac
 done
 
-# ---------- clean only ----------
+# ---- OS ----
+OS="$(uname -s)"
+if [ "$OS" = "Darwin" ]; then
+  TARGET_OS="mac"
+elif [ "$OS" = "Linux" ]; then
+  TARGET_OS="linux"
+else
+  echo "Unsupported OS: $OS" >&2; exit 1
+fi
+echo "Detected OS: $TARGET_OS"
+
+# ---- clean ----
 if $CLEAN_ONLY; then
-  echo "$emoji_rocket Cleaning previous builds..."
   rm -rf "$BUILD_DIR" "$DIST_DIR"
-  echo "$emoji_ok Clean complete."
+  echo "Cleaned build artifacts."
   exit 0
 fi
 
-# ---------- check OS ----------
-OS="$(uname -s)"
-case "$OS" in
-  Darwin) TARGET_OS="mac";;
-  Linux)  TARGET_OS="linux";;
-  *)      die "Unsupported OS: $OS";;
-es case
-
-echo "$emoji_rocket Detected OS: $TARGET_OS"
-
-# ---------- python / pip ----------
-PYBIN=""
-if has python3; then PYBIN="python3"
-elif has python; then PYBIN="python"
-else die "Python is not installed. Install Python 3.10+ first."
+# ---- python ----
+if command -v python3 >/dev/null 2>&1; then PYBIN="python3"
+elif command -v python >/dev/null 2>&1; then PYBIN="python"
+else echo "Python 3 not found." >&2; exit 1
 fi
 
-# Verify Tk on mac is good (optional but helpful)
-if [[ "$TARGET_OS" == "mac" ]]; then
-  if ! $PYBIN - <<'PY' >/dev/null 2>&1; then
-import tkinter as tk
-_ = tk.TkVersion
-PY
-  then
-    echo "⚠️  Could not import tkinter. On macOS, install Python from python.org (universal2)."
+# ---- venv (keep it super simple) ----
+# On WSL (paths starting with /mnt/), put venv in home for speed; else local
+if echo "$REPO_ROOT" | grep -q '^/mnt/'; then
+  VENV_DIR="$HOME/.venvs/bahtbuddy"
+else
+  VENV_DIR="$REPO_ROOT/.venv"
+fi
+
+if [ -z "${VIRTUAL_ENV:-}" ]; then
+  if [ ! -d "$VENV_DIR" ]; then
+    echo "Creating venv at: $VENV_DIR"
+    "$PYBIN" -m venv "$VENV_DIR"
   fi
+  # shellcheck disable=SC1091
+  . "$VENV_DIR/bin/activate"
+else
+  echo "Using active venv: $VIRTUAL_ENV"
 fi
 
-# ---------- venv ----------
-if [[ ! -d "$VENV_DIR" ]]; then
-  echo "$emoji_rocket Creating virtual environment at $VENV_DIR ..."
-  $PYBIN -m venv "$VENV_DIR" || die "Failed to create venv."
-fi
-
-# shellcheck disable=SC1091
-source "$VENV_DIR/bin/activate"
-
-echo "$emoji_rocket Checking pip & PyInstaller..."
 python -m pip install --upgrade pip >/dev/null
-python -m pip install pyinstaller >/dev/null || die "Failed to install PyInstaller."
+python -m pip install pyinstaller >/dev/null
 
-echo "$emoji_ok PyInstaller ready."
-
-# ---------- paths & sanity ----------
-[[ -f "$MAIN_DIR/gui.py" ]] || die "Could not find $MAIN_DIR/gui.py. Repo layout mismatch?"
+# ---- build ----
+[ -f "$MAIN_DIR/gui.py" ] || { echo "Missing $MAIN_DIR/gui.py"; exit 1; }
 cd "$MAIN_DIR"
-
-# Clean old artifacts
 rm -rf "$BUILD_DIR" "$DIST_DIR"
 
-# Icon if present
-ICON_FLAG=()
-if [[ -f "$REPO_ROOT/assets/icon.icns" && "$TARGET_OS" == "mac" ]]; then
-  ICON_FLAG=(--icon "$REPO_ROOT/assets/icon.icns")
-fi
-
-echo "$emoji_rocket Building BahtBuddy for $TARGET_OS ..."
-
-if [[ "$TARGET_OS" == "mac" ]]; then
-  # macOS: build an .app bundle (GUI, no console)
-  pyinstaller \
-    --name "BahtBuddy" \
-    --windowed \
-    --onedir \
-    "${ICON_FLAG[@]}" \
-    gui.py
+if [ "$TARGET_OS" = "mac" ]; then
+  # macOS app bundle
+  pyinstaller --name "BahtBuddy" --windowed --onedir gui.py
   APP_PATH="$DIST_DIR/BahtBuddy.app"
-
-  if [[ -d "$APP_PATH" ]]; then
-    echo "$emoji_ok Build complete: $APP_PATH"
-    echo "To launch: open \"$APP_PATH\""
-    echo "If Gatekeeper blocks the app (unsigned), run once:"
-    echo "  xattr -dr com.apple.quarantine \"$APP_PATH\""
-    $RUN_AFTER && open "$APP_PATH" || true
-  else
-    die "Build failed — .app not found at $APP_PATH"
-  fi
-
-elif [[ "$TARGET_OS" == "linux" ]]; then
-  # Linux: build a GUI executable (no console)
-  # Use --noconsole to suppress terminal; --windowed is ignored on Linux
-  pyinstaller \
-    --name "BahtBuddy" \
-    --noconsole \
-    --onefile \
-    gui.py
-  BIN_PATH="$DIST_DIR/BahtBuddy"b
-
-  if [[ -f "$BIN_PATH" ]]; then
-    chmod +x "$BIN_PATH"
-    echo "$emoji_ok Build complete: $BIN_PATH"
-    echo "To launch: \"$BIN_PATH\""
-    $RUN_AFTER && "$BIN_PATH" || true
-  else
-    die "Build failed — executable not found at $BIN_PATH"
-  fi
+  [ -d "$APP_PATH" ] || { echo "Build failed (no app)"; exit 1; }
+  echo "Built: $APP_PATH"
+  $RUN_AFTER && open "$APP_PATH" || true
+else
+  # Linux single-file GUI exe
+  pyinstaller --name "BahtBuddy" --noconsole --onefile gui.py
+  BIN_PATH="$DIST_DIR/BahtBuddy"
+  [ -f "$BIN_PATH" ] || { echo "Build failed (no binary)"; exit 1; }
+  chmod +x "$BIN_PATH"
+  echo "Built: $BIN_PATH"
+  $RUN_AFTER && "$BIN_PATH" || true
 fi
 
-echo "$emoji_ok Done."
+echo "Done."
