@@ -165,25 +165,34 @@ sudo apt install python3-tk
 | macOS | `pyinstaller --name "BahtBuddy" --windowed --onedir gui.py` | `open main/dist/BahtBuddy.app` | `main/dist/BahtBuddy.app` |
 | Linux | `pyinstaller --name "BahtBuddy" --windowed --onedir gui.py` | `./main/dist/BahtBuddy/BahtBuddy` | `main/dist/BahtBuddy/` |
 
-## Importing a Chart of Accounts (advanced)
-Besides the default set, you can import accounts programmatically:
+## Advanced: Importing a Chart of Accounts
 
-- CSV format: `name,type` (types: asset, liability, equity, income, expense)
-- JSON format: array of objects, each with `name` and `type`
+Besides the default account set, you can import accounts programmatically:
 
-```python path=null start=null
+**CSV format:** `name,type` (types: asset, liability, equity, income, expense)
+
+**JSON format:** Array of objects, each with `name` and `type`
+
+```python
 from main import init, init_coa_from_file
 init()
 init_coa_from_file("/path/to/coa.csv")  # or .json
 ```
 
 ## Troubleshooting
-- “No accounts found” in Accounts: click “Load Default Accounts”.
-- GUI doesn’t launch on Linux/macOS: ensure `tkinter` is installed with your Python distribution.
-- Build script fails: verify Python is on PATH and rerun `main\deployment_package\build_bahtbuddy.bat` from a terminal.
+
+| Issue | Solution |
+|-------|----------|
+| "No accounts found" in Accounts tab | Click "Load Default Accounts" button |
+| GUI doesn't launch on Linux/macOS | Ensure `tkinter` is installed with your Python distribution |
+| Build script fails on Windows | Verify Python is on PATH and rerun `main\deployment_package\build_bahtbuddy.bat` from terminal |
+| Missing tkinter on Linux | Run `sudo apt install python3-tk` |
 
 ## Authors
-- Chirayu Sukhum (Tuey)
-- Thanakrit Punyasuntontamrong (Pass)
-- Khant Phyo Wai (KP)
+- **Chirayu Sukhum** (Tuey)
+- **Thanakrit Punyasuntontamrong** (Pass)
+- **Khant Phyo Wai** (KP)
 - Kris Luangpenthong (Ken)
+
+## License
+This project is developed as part of SEN-201 Software Engineering Process coursework at CMKL University.
