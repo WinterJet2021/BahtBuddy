@@ -86,7 +86,8 @@ class AddAccountDialog(tk.Toplevel):
 
         ttk.Label(self, text="Account Type:").grid(row=1, column=0, padx=10, pady=5, sticky="w")
         self.type_var = tk.StringVar()
-        self.type_combo = ttk.Combobox(self, textvariable=self.type_var, state="readonly", values=['asset', 'liability', 'equity', 'income', 'expense'])
+        self.type_combo = ttk.Combobox(self, textvariable=self.type_var, state="readonly",
+                                       values=['asset', 'liability', 'equity', 'income', 'expense'])
         self.type_combo.grid(row=1, column=1, padx=10, pady=5)
         self.type_combo.set('asset')
 
@@ -106,8 +107,7 @@ class AddAccountDialog(tk.Toplevel):
             messagebox.showwarning("Input Error", "Account name cannot be empty.", parent=self)
             return
         
-        # This function is not in main.py, so we call the database layer directly.
-        # In a real-world scenario, this logic would be in main.py.
+        # Direct to database via main.db to avoid creating new API surface here.
         try:
             main.db.insert_account(name, acc_type)
             messagebox.showinfo("Success", f"Account '{name}' added successfully.", parent=self)
@@ -237,7 +237,7 @@ class ModifyTransactionDialog(tk.Toplevel):
         result = main.modify_transaction(self.txn_id, **fields)
         if result['ok']:
             messagebox.showinfo("Success", "Transaction updated.", parent=self)
-            self.parent.refresh_data()
+            self.parent.refresh_transactions()
             self.destroy()
         else:
             show_api_error(result, "Update Failed")
@@ -273,30 +273,30 @@ class DashboardFrame(ttk.Frame):
         ttk.Label(self, textvariable=str_var, font=("Helvetica", 14, font_weight)).grid(row=row, column=1, sticky="w", padx=10, pady=5)
 
     def refresh_data(self):
-        """Recalculates and updates the dashboard figures."""
+        """Refresh the dashboard summary only (no transaction widgets here)."""
+        self.acc_manager.refresh()
+
         self.assets_var.set("Calculating...")
         self.liabilities_var.set("Calculating...")
         self.net_worth_var.set("Calculating...")
-        self.update_idletasks() # Force UI update
+        self.update_idletasks()
 
         total_assets = 0.0
         total_liabilities = 0.0
-        
+
         for account in self.acc_manager.accounts:
             res = main.get_balance(account['account_id'])
-            if res['ok']:
-                balance = res['balance']
+            if res.get('ok'):
+                bal = float(res['balance'])
                 if account['type'] == 'asset':
-                    total_assets += balance
+                    total_assets += bal
                 elif account['type'] == 'liability':
-                    total_liabilities += balance
-        
+                    total_liabilities += bal
+
         net_worth = total_assets - total_liabilities
-        
         self.assets_var.set(f"฿ {total_assets:,.2f}")
         self.liabilities_var.set(f"฿ {total_liabilities:,.2f}")
         self.net_worth_var.set(f"฿ {net_worth:,.2f}")
-
 
 class AccountsFrame(ttk.Frame):
     """Frame for viewing and managing accounts."""
@@ -334,16 +334,16 @@ class AccountsFrame(ttk.Frame):
     
     def refresh_data(self):
         """Clears and repopulates the accounts treeview."""
-        self.acc_manager.refresh() # Update the cache first
+        self.acc_manager.refresh()  # Update the cache first
         
         for i in self.tree.get_children():
             self.tree.delete(i)
         
         if not self.acc_manager.accounts:
-            self.init_coa_btn.state(['!disabled']) # Enable button if no accounts
+            self.init_coa_btn.state(['!disabled'])  # Enable button if no accounts
             self.tree.insert("", "end", values=("", "No accounts found.", "Click 'Load Default Accounts' to start.", ""))
         else:
-            self.init_coa_btn.state(['disabled']) # Disable if accounts exist
+            self.init_coa_btn.state(['disabled'])  # Disable if accounts exist
             for acc in self.acc_manager.accounts:
                 res = main.get_balance(acc['account_id'])
                 balance = f"{res['balance']:,.2f}" if res['ok'] else "Error"
@@ -458,10 +458,9 @@ class TransactionsFrame(ttk.Frame):
         ttk.Label(filter_frame, text="Account:").pack(side="left", padx=5)
         self.search_acc_combo = ttk.Combobox(filter_frame, state="readonly", width=30)
         self.search_acc_combo.pack(side="left", padx=5)
-        # Add a "All Accounts" option
-        self.search_acc_combo.bind("<<ComboboxSelected>>", lambda e: self.search_transactions())
+        self.search_acc_combo.bind("<<ComboboxSelected>>", lambda e: self.refresh_transactions())
 
-        ttk.Button(filter_frame, text="Search", command=self.search_transactions).pack(side="left", padx=5)
+        ttk.Button(filter_frame, text="Search", command=self.refresh_transactions).pack(side="left", padx=5)
         ttk.Button(filter_frame, text="Modify Selected", command=self.open_modify_dialog).pack(side="right", padx=5)
         ttk.Button(filter_frame, text="Delete Selected", command=self.delete_transaction).pack(side="right", padx=5)
 
@@ -495,7 +494,7 @@ class TransactionsFrame(ttk.Frame):
         self.search_acc_combo.set(all_accounts[0])
         
         # Fetch initial transaction list
-        self.search_transactions()
+        self.refresh_transactions()
 
     def record_transaction(self):
         date = self.date_entry.get()
@@ -506,19 +505,15 @@ class TransactionsFrame(ttk.Frame):
             messagebox.showwarning("Input Error", "Please enter a valid amount.")
             return
 
-        current_tab = self.notebook.select()
-
-        if current_tab == str(self.exp_tab):
-            # Expense: credit = paid from, debit = expense category
+        tab_index = self.notebook.index('current')
+        if tab_index == 0:  # Expense: credit = paid from, debit = expense category
             credit_name, debit_name = self.exp_tab.combo1.get(), self.exp_tab.combo2.get()
-        elif current_tab == str(self.inc_tab):
-            # Income: credit = income source, debit = deposit to
+        elif tab_index == 1:  # Income: credit = income source, debit = deposit to
             credit_name, debit_name = self.inc_tab.combo1.get(), self.inc_tab.combo2.get()
-        else:
-            # Transfer: credit = from, debit = to
+        else:  # Transfer: credit = from, debit = to
             credit_name, debit_name = self.trn_tab.combo1.get(), self.trn_tab.combo2.get()
         
-        if not all([date, amount, credit_name, debit_name]):
+        if not all([date, credit_name, debit_name]):
             messagebox.showwarning("Input Error", "Please fill all required fields.")
             return
             
@@ -530,32 +525,44 @@ class TransactionsFrame(ttk.Frame):
             messagebox.showinfo("Success", "Transaction recorded.")
             self.amount_entry.delete(0, 'end')
             self.notes_entry.delete(0, 'end')
-            self.search_transactions() # Refresh list
+            self.refresh_transactions()
         else:
             show_api_error(result, "Record Failed")
     
-    def search_transactions(self):
+    def refresh_transactions(self):
+        # Clear current rows
         for i in self.tree.get_children():
             self.tree.delete(i)
-        
+
+        # Determine filter (account) from combobox
         account_name = self.search_acc_combo.get()
         account_id = None
-        if account_name != "-- All Accounts --":
+        if account_name and account_name != "-- All Accounts --":
             account_id = self.acc_manager.get_id(account_name)
-            
-        if account_id:
-            res = main.view_transactions(account_id=account_id)
-        else:
-            res = main.search_transactions()
-        
-        if res['ok']:
-            self.transactions_data = res['items']
-            for txn in self.transactions_data:
-                debit_name = self.acc_manager.get_name(txn['debit_account_id'])
-                credit_name = self.acc_manager.get_name(txn['credit_account_id'])
-                self.tree.insert("", "end", values=(
-                    txn['txn_id'], txn['date'], debit_name, credit_name, f"{txn['amount']:,.2f}", txn['notes']
-                ))
+
+        # Call backend
+        try:
+            if account_id is not None:
+                res = main.view_transactions(account_id=account_id)
+            else:
+                res = main.view_transactions()
+        except Exception as e:
+            messagebox.showerror("Query Failed", f"Could not fetch transactions:\n{e}")
+            return
+
+        if not res or not res.get('ok'):
+            show_api_error(res or {"error": "Unknown error"}, "Fetch Failed")
+            return
+
+        # Cache and render
+        self.transactions_data = res['items']
+        for txn in self.transactions_data:
+            debit_name = self.acc_manager.get_name(txn['debit_account_id'])
+            credit_name = self.acc_manager.get_name(txn['credit_account_id'])
+            self.tree.insert(
+                "", "end",
+                values=(txn['txn_id'], txn['date'], debit_name, credit_name, f"{txn['amount']:,.2f}", txn['notes'])
+            )
 
     def open_modify_dialog(self):
         selected_item = self.tree.focus()
@@ -579,7 +586,7 @@ class TransactionsFrame(ttk.Frame):
             res = main.delete_transaction(txn_id)
             if res['ok']:
                 messagebox.showinfo("Success", "Transaction deleted.")
-                self.search_transactions()
+                self.refresh_transactions()
             else:
                 show_api_error(res, "Delete Failed")
 
@@ -636,7 +643,6 @@ class BudgetFrame(ttk.Frame):
         self.report_period_entry.pack(side="left", padx=5)
         self.report_period_entry.insert(0, datetime.now().strftime("%Y-%m"))
         
-
         self.tree = ttk.Treeview(parent, columns=("cat", "budget", "actual", "var", "pct"), show="headings")
         self.tree.grid(row=1, column=0, sticky="nsew")
 
@@ -675,7 +681,6 @@ class BudgetFrame(ttk.Frame):
         if res['ok']:
             messagebox.showinfo("Success", "Budget has been set.")
             self.set_amount_entry.delete(0, 'end')
-            # If the report is for the same period, refresh it
             if self.report_period_entry.get() == period:
                 self.generate_report()
         else:
@@ -722,7 +727,7 @@ class App(tk.Tk):
         # Navigation bar
         nav_bar = ttk.Frame(self, width=150, style='Card.TFrame')
         nav_bar.grid(row=0, column=0, sticky="nsw")
-        nav_bar.grid_rowconfigure(5, weight=1) # Push exit button to bottom
+        nav_bar.grid_rowconfigure(5, weight=1)  # Push exit button to bottom
         
         ttk.Label(nav_bar, text="BahtBuddy", font=("Helvetica", 16, "bold"), padding=10).grid(row=0, column=0)
         
@@ -756,7 +761,6 @@ class App(tk.Tk):
         """Shows the requested frame and refreshes its data."""
         frame = self.frames[frame_class]
         frame.tkraise()
-        # Call the frame's refresh method if it exists
         if hasattr(frame, 'refresh_data'):
             frame.refresh_data()
 

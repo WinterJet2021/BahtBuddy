@@ -135,7 +135,7 @@ elif [[ "$TARGET_OS" == "linux" ]]; then
     --noconsole \
     --onefile \
     gui.py
-  BIN_PATH="$DIST_DIR/BahtBuddy"
+  BIN_PATH="$DIST_DIR/BahtBuddy"b
 
   if [[ -f "$BIN_PATH" ]]; then
     chmod +x "$BIN_PATH"

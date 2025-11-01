@@ -14,6 +14,7 @@ import json
 from typing import Any, Dict, List, Optional, Tuple
 
 import database as db
+import tkinter.messagebox as messagebox
 from validation import ymd, ym, amount_pos, account_type_valid
 
 # -----------------------------------------------------------------------------
@@ -157,6 +158,23 @@ def get_accounts() -> Dict[str, Any]:
         return {"ok": False, "error": str(e)}
 
 # -----------------------------------------------------------------------------
+# Helper functions
+# -----------------------------------------------------------------------------
+
+def show_api_error(res: Dict[str, Any], title: str = "Error") -> None:
+    """Display an API error message using tkinter.messagebox (fallback to print)."""
+    if not res:
+        message = "Unknown error"
+    elif isinstance(res, dict):
+        message = res.get("error") or json.dumps(res)
+    else:
+        message = str(res)
+    try:
+        messagebox.showerror(title, message)
+    except Exception:
+        print(f"{title}: {message}")
+
+# -----------------------------------------------------------------------------
 # Opening Balance Functions
 # -----------------------------------------------------------------------------
 
@@ -186,7 +204,6 @@ def add_transaction(date: str, amount: float, debit_id: int, credit_id: int, not
 
 def modify_transaction(txn_id: int, **fields: Any) -> Dict[str, Any]:
     """Modify an existing transaction."""
-    clean: Dict[str, Any] = {}
     if "amount" in fields and not amount_pos(fields["amount"]):
         return {"ok": False, "error": "Invalid amount."}
     if "date" in fields and not ymd(fields["date"]):
@@ -202,9 +219,29 @@ def delete_transaction(txn_id: int) -> Dict[str, bool]:
     db.delete_txn(txn_id)
     return {"ok": True}
 
-def search_transactions(src_account_id=None, dst_account_id=None, date_from=None, date_to=None, limit=DEFAULT_TRANSACTION_LIMIT, offset=DEFAULT_TRANSACTION_OFFSET) -> Dict[str, Any]:
-    """Search transactions with filters."""
-    rows = db.search_txns(src_account_id, dst_account_id, date_from, date_to, limit, offset)
+def get_balance(account_id: int, date_to: Optional[str] = None) -> Dict[str, Any]:
+    """Calculate balance for a given account."""
+    if not db.account_exists(account_id):
+        return {"ok": False, "error": "Account does not exist."}
+    balance = db.account_balance(account_id, date_to)
+    return {"ok": True, "balance": float(balance)}
+
+def view_transactions(
+    account_id: Optional[int] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    limit: int = DEFAULT_TRANSACTION_LIMIT,
+    offset: int = DEFAULT_TRANSACTION_OFFSET,
+) -> Dict[str, Any]:
+    """
+    Return transactions. If account_id is given, include rows where that account
+    appears on EITHER side (debit OR credit). Otherwise return all transactions.
+    """
+    if account_id is None:
+        rows = db.search_txns(None, None, date_from, date_to, limit, offset)
+    else:
+        rows = db.list_txns_for_account(account_id, date_from, date_to, limit, offset)
+
     items = [
         {
             "txn_id": r[0],
@@ -217,13 +254,6 @@ def search_transactions(src_account_id=None, dst_account_id=None, date_from=None
         for r in rows
     ]
     return {"ok": True, "items": items}
-
-def get_balance(account_id: int, date_to: Optional[str] = None) -> Dict[str, Any]:
-    """Calculate balance for a given account."""
-    if not db.account_exists(account_id):
-        return {"ok": False, "error": "Account does not exist."}
-    balance = db.account_balance(account_id, date_to)
-    return {"ok": True, "balance": float(balance)}
 
 # -----------------------------------------------------------------------------
 # Budget Management
@@ -264,19 +294,19 @@ def budget_report(period: str) -> Dict[str, Any]:
 # -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    print("🚀 Starting BahtBuddy backend...")
+    print("Starting BahtBuddy backend...")
     try:
         result = init()
         if result.get("ok"):
-            print("✅ Database initialized successfully.")
+            print("Database initialized successfully.")
             coa_result = init_coa_default()
             if coa_result.get("ok"):
-                print(f"📘 Default Chart of Accounts loaded ({coa_result.get('added', 0)} accounts).")
+                print(f"Default Chart of Accounts loaded ({coa_result.get('added', 0)} accounts).")
             else:
-                print("⚠️ Chart of Accounts initialization failed:", coa_result.get("error"))
-            print("💾 BahtBuddy is ready to use.")
+                print("Chart of Accounts initialization failed:", coa_result.get("error"))
+            print("BahtBuddy is ready to use.")
         else:
-            print("⚠️ Database initialization failed:", result.get("error"))
+            print("Database initialization failed:", result.get("error"))
     except Exception as e:
-        print("❌ Startup error:", e)
+        print("Startup error:", e)
     input("\nPress Enter to exit...")
